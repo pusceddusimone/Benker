@@ -99,7 +99,9 @@ def preprocess(msg):
     msg = [msg]
     d = {'message': msg}
     df = pd.DataFrame(data=d)
-    if not nltk.corpus.stopwords.fileids():
+    try:
+        nltk.corpus.stopwords.words('english')
+    except LookupError:
         nltk.download('stopwords')
     df['message'] = df['message'].apply(remove_stopwords)
     df['message'] = df['message'].apply(stemming)

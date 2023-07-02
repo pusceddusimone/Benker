@@ -1,3 +1,5 @@
+import os
+
 from matplotlib import pyplot as plt
 
 import classifier
@@ -157,7 +159,7 @@ def get_random_response(prediction):
 def register_user_feedback(text, label):
     try:
         new_element = [text, label]
-        file_path = "banking-training-user.csv"
+        file_path = os.path.join(os.path.dirname(__file__), 'dataset', 'banking-training-user.csv')
         new_dataframe = pd.DataFrame([new_element])
         new_dataframe.to_csv(file_path, mode='a', header=False, index=False)
 
@@ -213,10 +215,7 @@ def send_report(message):
 
     plt.axis('off')
 
-    table_image_path = 'table_image.png'
-    plt.savefig(table_image_path, bbox_inches='tight')
-
-    table_path = 'table_image.png'
+    table_path = os.path.join(os.path.dirname(__file__), 'images', 'table_image.png')
     plt.savefig(table_path, bbox_inches='tight')
     with open(table_path, 'rb') as image_file:
         bot.send_photo(message.chat.id, image_file)

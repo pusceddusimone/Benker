@@ -1,3 +1,4 @@
+import os
 from itertools import chain
 
 import pandas as pd
@@ -12,11 +13,13 @@ import preprocessing as pp
 
 
 def initial_train():
-    train_df = pd.read_parquet('banking-train.parquet')
+    train_path = os.path.join(os.path.dirname(__file__), 'dataset', 'banking-train.parquet')
+    train_df = pd.read_parquet(train_path)
 
     X_train = train_df['text']
     y_train = train_df['label']
-    data = pd.read_csv("banking-training-user.csv")
+    train_user_path = os.path.join(os.path.dirname(__file__), 'dataset', 'banking-training-user.csv')
+    data = pd.read_csv(train_user_path)
     y_user = data['label']
     y_train = pd.concat([y_train, y_user])
     series_preprocessed = apply_preprocessing(X_train)
@@ -66,7 +69,8 @@ def apply_preprocessing(x):
 
 
 def calculate_accuracy(model, vectorizer):
-    test_df = pd.read_parquet('banking-test.parquet')
+    test_path = os.path.join(os.path.dirname(__file__), 'dataset', 'banking-test.parquet')
+    test_df = pd.read_parquet(test_path)
     X_test = test_df['text']
     y_test = test_df['label']
     series_preprocessed = apply_preprocessing(X_test)
@@ -76,7 +80,8 @@ def calculate_accuracy(model, vectorizer):
 
 
 def generate_report(model, vectorizer):
-    test_df = pd.read_parquet('banking-test.parquet')
+    test_path = os.path.join(os.path.dirname(__file__), 'dataset', 'banking-test.parquet')
+    test_df = pd.read_parquet(test_path)
     X_test = test_df['text']
     y_test = test_df['label']
     series_preprocessed = apply_preprocessing(X_test)
