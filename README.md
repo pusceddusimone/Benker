@@ -1,4 +1,6 @@
 # About Benker
+My @ in telegram is [@Benker_bot](https://telegram.me/Benker_bot) !<br/>
+Benker is born as a college project and it is a telegram bot which can classify textual requests of banking nature.<br/>
 Benker provides 3 models of text classification, which are:
 <ul>
   <li>Naive Bayes </li>
