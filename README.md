@@ -12,6 +12,7 @@ Here's a brief description of all the scripts included in the project:
 <ul>
   <li><ins><b>bot.py</b></ins>: used for all the bot's prompts and acts as an interface to the user via telegram</li>
   <li><ins><b>classifier.py</b></ins>: used to train the models and the vectorizers</li>
+  <li><ins><b>preprocess.py</b></ins>: used to preprocess all the text</li>
 </ul>
 <h2>Modules required</h2>
 Before executing the program, you must install the following mandatory modules:
