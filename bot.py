@@ -113,6 +113,10 @@ def check_if_model_trained():
     return model is None or vectorizer is None
 
 
+def error_logger(chat_id, error_message):
+    unified_message_sender(chat_id, "Oops, something went wrong\n{}".format(error_message))
+
+
 def from_number_to_class(num):
     if num in label_intent_mapping:
         return label_intent_mapping[num]
@@ -190,110 +194,127 @@ def send_goodbye(message):
 
 @bot.message_handler(commands=['report'])
 def send_report(message):
-    if check_if_model_trained():
-        unified_message_sender(message.chat.id, "Looks like you haven't trained a model yet\nType /start to train one")
-        return
-    unified_message_sender(message.chat.id, "Report? Very well, just one second while I generate it")
-    data = classifier.generate_report(model, vectorizer)
-    df = pd.DataFrame(data).T
-    excluded_indices = list(df.index)[-3:]
-    df = df.drop(excluded_indices)
-    df.index = df.index.astype(int)
-    df.index = df.index.map(label_intent_mapping)
-    excluded_df = pd.DataFrame(data).T.loc[excluded_indices]
-    df = pd.concat([df, excluded_df])
-    df = df.round(decimals=2)
-    table_plot = plt.table(cellText=df.values,
-                           colLabels=df.columns,
-                           rowLabels=df.index,
-                           cellLoc='center',
-                           loc='center')
+    try:
+        if check_if_model_trained():
+            unified_message_sender(message.chat.id,
+                                   "Looks like you haven't trained a model yet\nType /start to train one")
+            return
+        unified_message_sender(message.chat.id, "Report? Very well, just one second while I generate it")
+        data = classifier.generate_report(model, vectorizer)
+        df = pd.DataFrame(data).T
+        excluded_indices = list(df.index)[-3:]
+        df = df.drop(excluded_indices)
+        df.index = df.index.astype(int)
+        df.index = df.index.map(label_intent_mapping)
+        excluded_df = pd.DataFrame(data).T.loc[excluded_indices]
+        df = pd.concat([df, excluded_df])
+        df = df.round(decimals=2)
+        table_plot = plt.table(cellText=df.values,
+                               colLabels=df.columns,
+                               rowLabels=df.index,
+                               cellLoc='center',
+                               loc='center')
 
-    table_plot.auto_set_font_size(False)
-    table_plot.set_fontsize(12)
-    table_plot.scale(1.2, 1.2)
+        table_plot.auto_set_font_size(False)
+        table_plot.set_fontsize(12)
+        table_plot.scale(1.2, 1.2)
 
-    plt.axis('off')
+        plt.axis('off')
 
-    table_path = os.path.join(os.path.dirname(__file__), 'images', 'table_image.png')
-    plt.savefig(table_path, bbox_inches='tight')
-    with open(table_path, 'rb') as image_file:
-        bot.send_photo(message.chat.id, image_file)
+        table_path = os.path.join(os.path.dirname(__file__), 'images', 'table_image.png')
+        plt.savefig(table_path, bbox_inches='tight')
+        with open(table_path, 'rb') as image_file:
+            bot.send_photo(message.chat.id, image_file)
+    except Exception as e:
+        unified_message_sender(message.chat.id, str(e))
 
 
 @bot.message_handler(commands=['accuracy'])
 def send_accuracy(message):
-    if check_if_model_trained():
-        unified_message_sender(message.chat.id, "Looks like you haven't trained a model yet\nType /start to train one")
-        return
-    unified_message_sender(message.chat.id, "Hold on a second, let me search where I left it...")
-    unified_message_sender(message.chat.id,
-                           "There it is! \nMy accuracy is: {}".format(classifier.calculate_accuracy(model, vectorizer)))
+    try:
+        if check_if_model_trained():
+            unified_message_sender(message.chat.id, "Looks like you haven't trained a model yet\nType /start to train "
+                                                    "one")
+            return
+        unified_message_sender(message.chat.id, "Hold on a second, let me search where I left it...")
+        unified_message_sender(message.chat.id,
+                               "There it is! \nMy accuracy is: {}".format(
+                                   classifier.calculate_accuracy(model, vectorizer)))
+    except Exception as e:
+        unified_message_sender(message.chat.id, str(e))
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
-    global last_bot_message
-    remove_buttons(last_bot_message)
-    if call.data in ['SVM', 'LR', 'NB']:
-        train_model(call.message.chat.id, call.data)
-    elif call.data == 'button_yes':
-        unified_message_sender(call.message.chat.id, "Oh wow, I mean obviously I'm right\n"
-                                                     "Do you have more requests?")
-    elif call.data == 'button_no':
-        global array_last_predictions
-        sorted_indices = np.argsort(array_last_predictions[0])[::-1]
-        keyboard_query = types.InlineKeyboardMarkup()
-        max_options_number = 5
-        for index in range(1, max_options_number):
-            button = types.InlineKeyboardButton(from_number_to_class(sorted_indices[index]),
-                                                callback_data=str(sorted_indices[index]))
+    try:
+        global last_bot_message
+        remove_buttons(last_bot_message)
+        if call.data in ['SVM', 'LR', 'NB']:
+            train_model(call.message.chat.id, call.data)
+        elif call.data == 'button_yes':
+            unified_message_sender(call.message.chat.id, "Oh wow, I mean obviously I'm right\n"
+                                                         "Do you have more requests?")
+        elif call.data == 'button_no':
+            global array_last_predictions
+            sorted_indices = np.argsort(array_last_predictions[0])[::-1]
+            keyboard_query = types.InlineKeyboardMarkup()
+            max_options_number = 5
+            for index in range(1, max_options_number):
+                button = types.InlineKeyboardButton(from_number_to_class(sorted_indices[index]),
+                                                    callback_data=str(sorted_indices[index]))
+                keyboard_query.add(button)
+            button = types.InlineKeyboardButton("Not one of these ❌",
+                                                callback_data="wrong_answer")
             keyboard_query.add(button)
-        button = types.InlineKeyboardButton("Not one of these ❌",
-                                            callback_data="wrong_answer")
-        keyboard_query.add(button)
-        unified_message_sender(call.message.chat.id,
-                               "Ouch, maybe your request is one of these?",
-                               keyboard_query)
-    else:
-        global last_user_message
-        if last_user_message is not None and call.data != 'wrong_answer':
-            register_user_feedback(call.data, last_user_message.text)
-            unified_message_sender(last_user_message.chat.id, "Not all heroes wear capes, but I have one that fits "
-                                                              "you well\n"
-                                                              "The response has been recorded and it will take effect "
-                                                              "when you will execute /start again. \n"
-                                                              "Thanks for the feedback💅")
+            unified_message_sender(call.message.chat.id,
+                                   "Ouch, maybe your request is one of these?",
+                                   keyboard_query)
         else:
-            unified_message_sender(last_user_message.chat.id, "I give up 🏳.️\nCan I try with "
-                                                              "another one?")
+            global last_user_message
+            if last_user_message is not None and call.data != 'wrong_answer':
+                register_user_feedback(call.data, last_user_message.text)
+                unified_message_sender(last_user_message.chat.id, "Not all heroes wear capes, but I have one that fits "
+                                                                  "you well\n"
+                                                                  "The response has been recorded and it will take "
+                                                                  "effect"
+                                                                  "when you will execute /start again. \n"
+                                                                  "Thanks for the feedback💅")
+            else:
+                unified_message_sender(last_user_message.chat.id, "I give up 🏳.️\nCan I try with "
+                                                                  "another one?")
+    except Exception as e:
+        unified_message_sender(call.message.chat.id, str(e))
 
 
 @bot.message_handler(func=lambda msg: True)
 def answer_request(message):
-    if check_if_model_trained():
-        unified_message_sender(message.chat.id, "Looks like you haven't trained a model yet\nType /start to train one")
-        return
-    global last_user_message
-    last_user_message = message
-    text_preprocessed = pp.preprocess(message.text)
-    text_preprocessed = text_preprocessed["message"][0]
-    text_preprocessed = [' '.join(text_preprocessed)]
-    text_to_predict_transformed = vectorizer.transform(text_preprocessed).todense()
-    text_to_predict_transformed = np.array(text_to_predict_transformed)
+    try:
+        if check_if_model_trained():
+            unified_message_sender(message.chat.id, "Looks like you haven't trained a model yet\nType /start to train "
+                                                    "one")
+            return
+        global last_user_message
+        last_user_message = message
+        text_preprocessed = pp.preprocess(message.text)
+        text_preprocessed = text_preprocessed["message"][0]
+        text_preprocessed = [' '.join(text_preprocessed)]
+        text_to_predict_transformed = vectorizer.transform(text_preprocessed).todense()
+        text_to_predict_transformed = np.array(text_to_predict_transformed)
 
-    y_pred = model.predict(text_to_predict_transformed)
-    y_probabilities = model.predict_proba(text_to_predict_transformed)
-    global array_last_predictions
-    global last_bot_message
-    remove_buttons(last_bot_message)
-    array_last_predictions = y_probabilities
-    sorted_array = np.sort(array_last_predictions)[::-1]
-    text_prediction = from_number_to_class(y_pred[0])
-    text_response = get_random_response(text_prediction)
-    unified_message_sender(message.chat.id,
-                           "{}\nProbability of {}%".format(text_response, round(sorted_array[0][-1] * 100, 2)),
-                           parse_mode='HTML', keyboard_markup=keyboard)
+        y_pred = model.predict(text_to_predict_transformed)
+        y_probabilities = model.predict_proba(text_to_predict_transformed)
+        global array_last_predictions
+        global last_bot_message
+        remove_buttons(last_bot_message)
+        array_last_predictions = y_probabilities
+        sorted_array = np.sort(array_last_predictions)[::-1]
+        text_prediction = from_number_to_class(y_pred[0])
+        text_response = get_random_response(text_prediction)
+        unified_message_sender(message.chat.id,
+                               "{}\nProbability of {}%".format(text_response, round(sorted_array[0][-1] * 100, 2)),
+                               parse_mode='HTML', keyboard_markup=keyboard)
+    except Exception as e:
+        unified_message_sender(message.chat.id, str(e))
 
 
 bot.infinity_polling()
