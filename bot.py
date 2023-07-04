@@ -208,7 +208,7 @@ def send_report(message):
         df.index = df.index.map(label_intent_mapping)
         excluded_df = pd.DataFrame(data).T.loc[excluded_indices]
         df = pd.concat([df, excluded_df])
-        df = df.round(decimals=2)
+        df = df.round(decimals=4)
         table_plot = plt.table(cellText=df.values,
                                colLabels=df.columns,
                                rowLabels=df.index,

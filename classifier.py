@@ -34,7 +34,7 @@ def initial_train():
 def train_model_svm():
     vectorizer, X_train_transformed, y_train = initial_train()
 
-    model = svm.SVC(probability=True)
+    model = svm.SVC(probability=True, C=2, gamma='scale')
     model.fit(X_train_transformed, y_train)
 
     return model, vectorizer
@@ -44,7 +44,7 @@ def train_model_svm():
 def train_model_logistic_regression():
     vectorizer, X_train_transformed, y_train = initial_train()
 
-    model = LogisticRegression()
+    model = LogisticRegression(penalty='l2', solver='lbfgs', C=15)
     model.fit(X_train_transformed, y_train)
     return model, vectorizer
 
@@ -52,7 +52,7 @@ def train_model_logistic_regression():
 def train_model_naive_bayes():
     vectorizer, X_train_transformed, y_train = initial_train()
 
-    classifier = MultinomialNB()
+    classifier = MultinomialNB(alpha=0.1)
     classifier.fit(X_train_transformed, y_train)
     return classifier, vectorizer
 
