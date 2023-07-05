@@ -7,6 +7,11 @@ from nltk.corpus import stopwords
 
 
 def slang_to_english(mess):
+    """
+Function which converts each slang term to their english part
+    :param mess: message with slang to convert
+    :return: message converted
+    """
     mess = mess.split()
     slang_dict = {
         "lol": "laugh out loud",
@@ -82,20 +87,40 @@ def slang_to_english(mess):
 
 
 def remove_stopwords(mess):
+    """
+Function which removes punctuation and stopwords from the text
+    :param mess: message with punctuation and stopwords
+    :return: message without punctuation and stopwords
+    """
     nopunc = [char for char in mess if char not in string.punctuation]
     nopunc = ''.join(nopunc)
     return ' '.join([word for word in nopunc.split() if word.lower() not in stopwords.words('english')])
 
 
 def stemming(mess):
+    """
+Function which applies stemming to a message, PorterStemmer is used for this task
+    :param mess: message to stem
+    :return: message stemmed
+    """
     return ' '.join([PorterStemmer().stem(word) for word in mess.split()])
 
 
 def tokenize(mess):
+    """
+Function to tokenize a message
+    :param mess: message to tokenize
+    :return: message tokenized
+    """
     return mess.split()
 
 
 def preprocess(msg):
+    """
+Applies the removal of stopwords, stemming and tokenization to a message
+    :param msg: message to preprocess
+    :return: message preprocessed
+    """
     msg = [msg]
     d = {'message': msg}
     df = pd.DataFrame(data=d)
